@@ -2,6 +2,10 @@
 
 Companion implementation to [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop).
 
+# Why use it
+
+The reason this project exists is that RimWorld loads mods by first loading their dll into a byte[] and then load the bytes as an assembly. This usually breaks the relation between the dll and its pdb file and as a result breakpoints won't be active and useable. The code in the repository fixes this by patching the load mechanics with Harmony so the dll's are loaded by pointing out the dll file. 
+
 # How to use
 
 First, install Unity Doorstop by downloading their latest release and put the file `winhttp.dll` and `doorstop_config.ini` in the root directory of RimWorld. The default location of the directory is usually `C:\Program Files (x86)\Steam\steamapps\common\RimWorld`.
