@@ -35,8 +35,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.4.3901" />
-		<PackageReference Include="Lib.Harmony" Version="2.2.2" />
+		<PackageReference Include="dnlib" Version="4.4.0" />
+		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.5.4042-beta" />
+		<PackageReference Include="MonoMod.Utils" Version="25.0.4" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="0Harmony">
+			<HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\HarmonyMod\Current\Assemblies\0Harmony.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 	<Target Name="PostBuildAction" AfterTargets="Build">
