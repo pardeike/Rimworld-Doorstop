@@ -1,51 +1,32 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Reflection;
-using HarmonyLib;
-using UnityEngine;
-using Verse;
 
 namespace Doorstop
 {
 	public class Entrypoint
 	{
-		internal static Reloader reloader;
+		static readonly string[] assemblies =
+		[
+			"0Harmony.dll",
+			"Mono.Cecil.dll",
+			"Mono.Cecil.Mdb.dll",
+			"Mono.Cecil.Pdb.dll",
+			"Mono.Cecil.Rocks.dll"
+		];
 
 		public static void Start()
 		{
-			var harmony = new Harmony("brrainz.doorstop");
-			harmony.PatchAll(Assembly.GetExecutingAssembly());
-			reloader = new Reloader();
+			foreach (var assemblyName in assemblies)
+				Assembly.Load(LoadResourceBytes(assemblyName));
+			Type.GetType("Doorstop.Reloader").GetMethod("Start").Invoke(null, null);
 		}
-	}
 
-	public class ShutdownHandler : MonoBehaviour
-	{
-		public void OnApplicationQuit()
+		static byte[] LoadResourceBytes(string resourceName)
 		{
-			Entrypoint.reloader.DeleteAllFiles();
-		}
-	}
-
-	[HarmonyPatch(typeof(UIRoot_Entry), nameof(UIRoot_Entry.Init))]
-	static class UIRoot_Entry_Init_Patch
-	{
-		static void Postfix()
-		{
-			var obj = new GameObject("RimWorldDoorstopObject");
-			Object.DontDestroyOnLoad(obj);
-			obj.AddComponent<ShutdownHandler>();
-		}
-	}
-
-	[HarmonyPatch(typeof(ModAssemblyHandler), nameof(ModAssemblyHandler.ReloadAll))]
-	static class ModAssemblyHandler_ReloadAll_Patch
-	{
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-		{
-			return instructions.MethodReplacer(
-				SymbolExtensions.GetMethodInfo(() => Assembly.LoadFile("")),
-				SymbolExtensions.GetMethodInfo(() => Reloader.LoadFile(""))
-			);
+			using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+			var data = new byte[stream.Length];
+			stream.Read(data, 0, data.Length);
+			return data;
 		}
 	}
 }

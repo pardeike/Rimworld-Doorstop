@@ -1,148 +1,94 @@
-﻿using dnlib.DotNet;
-using HarmonyLib;
-using MonoMod.Utils;
+﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Verse;
 
 namespace Doorstop
 {
 	internal class Reloader
 	{
-		static int count = 0;
+		internal static void Start()
+		{
+			var harmony = new Harmony("brrainz.doorstop");
+			harmony.PatchAll(Assembly.GetExecutingAssembly());
+			instance = new Reloader();
+		}
 
+		internal static Reloader instance;
 		const string doorstopPrefix = "doorstop_";
 		readonly string modsDir;
-
-		delegate DynamicMethodDefinition CreateDynamicMethod(MethodBase original, string suffix, bool debug);
-		static readonly MethodInfo m_CreateDynamicMethod = AccessTools.Method("HarmonyLib.MethodPatcher:CreateDynamicMethod");
-		static readonly CreateDynamicMethod createDynamicMethod = AccessTools.MethodDelegate<CreateDynamicMethod>(m_CreateDynamicMethod);
-
-		delegate MethodInfo CreateReplacement(object instance, out Dictionary<int, CodeInstruction> finalInstructions);
-		static readonly MethodInfo m_CreateReplacement = AccessTools.Method("HarmonyLib.MethodPatcher:CreateReplacement");
-		static readonly CreateReplacement createReplacement = AccessTools.MethodDelegate<CreateReplacement>(m_CreateReplacement);
-
-		delegate void DetourMethod(MethodBase method, MethodBase replacement);
-		static readonly MethodInfo m_DetourMethod = AccessTools.Method("HarmonyLib.PatchTools:DetourMethod");
-		static readonly DetourMethod detourMethod = AccessTools.MethodDelegate<DetourMethod>(m_DetourMethod);
+		static readonly Dictionary<string, MethodBase> reloadableMembers = [];
+		static readonly List<FileSystemWatcher> watchers = [];
+		static readonly Debouncer changedFiles = new(TimeSpan.FromSeconds(3), basePath =>
+		{
+			var path = $"{basePath}.dll";
+			try
+			{
+				var assembly = ReloadAssembly(path, true);
+				UpdateAssembly(assembly);
+				$"{path} reloaded".LogMessage();
+			}
+			catch (Exception ex)
+			{
+				ex.ToString().LogError();
+			}
+		});
 
 		internal Reloader()
 		{
 			modsDir = Path.Combine(Directory.GetCurrentDirectory(), "Mods");
 			DeleteAllFiles();
 
+			watchers.Add(CreateWatcher("dll"));
+			watchers.Add(CreateWatcher("pdb"));
+		}
+
+		FileSystemWatcher CreateWatcher(string suffix)
+		{
 			var watcher = new FileSystemWatcher(modsDir)
 			{
-				Filter = "*.dll",
+				Filter = $"*.{suffix}",
 				IncludeSubdirectories = true,
 				EnableRaisingEvents = true
 			};
-
-			watcher.Changed += (_, e) =>
+			watcher.Error += (sender, e) => e.GetException().ToString().LogError();
+			watcher.Changed += (object _, FileSystemEventArgs e) =>
 			{
-				watcher.EnableRaisingEvents = false;
-				try
-				{
-					var path = e.FullPath;
-					if (path.StartsWith(doorstopPrefix) || path.Replace('\\', '/').Contains("/obj/"))
-						return;
+				var path = e.FullPath;
 
-					var assemblyPath = DupFiles(path);
-					using var dnModule = ModuleDefMD.Load(assemblyPath);
-					UpdateModule(dnModule);
-					LongEventHandler.QueueLongEvent(() => Log.Message($"Reloaded {path} [{e.ChangeType}]"), "dll-reloading", false, null);
-				}
-				finally
-				{
-					watcher.EnableRaisingEvents = true;
-				}
+				if (path.Replace('\\', '/').Contains("/obj/"))
+					return;
+
+				var filename = Path.GetFileNameWithoutExtension(path);
+				if (filename.StartsWith(doorstopPrefix))
+					return;
+
+				changedFiles.Add(path.WithoutFileExtension());
 			};
-
-			watcher.Error += (sender, e) => Log.Error(e.GetException().ToString());
+			return watcher;
 		}
 
-		static void UpdateModule(ModuleDefMD dnModule)
+		internal static void RewriteAssemblyResolving()
 		{
-			bool AnnotatedType(TypeDef dnTypeTop)
+			AppDomain.CurrentDomain.ReflectionOnlyAssemblyResolve += (sender, args) =>
 			{
-				if (dnTypeTop.HasCustomAttributes == false)
-					return false;
+				var requestedAssemblyName = new AssemblyName(args.Name).Name;
+				var loadedAssembly = AppDomain.CurrentDomain.GetAssemblies()
+					 .FirstOrDefault(a => new AssemblyName(a.FullName).Name == requestedAssemblyName);
 
-				var reloadableTypeName = typeof(ReloadableAttribute).FullName;
-				return dnTypeTop.CustomAttributes.Any(a => a.AttributeType.TypeName == reloadableTypeName);
-			}
+				if (loadedAssembly != null)
+					return Assembly.ReflectionOnlyLoadFrom(loadedAssembly.Location);
 
-			dnModule.GetTypes()
-				.DoIf(AnnotatedType, dnTypeTop =>
-				{
-					var typeWithAttr = Type.GetType(dnTypeTop.AssemblyQualifiedName);
-					var types = AccessTools.InnerTypes(typeWithAttr).Where(IsCompilerGenerated).Concat(typeWithAttr);
-					types.OfType<Type>().Do(type => UpdateType(type, dnModule.FindReflection(type.FullName)));
-				});
+				throw new InvalidOperationException($"Unable to resolve assembly: {args.Name}");
+			};
 		}
 
-		static void UpdateType(Type systemType, TypeDef dnType)
+		static void FileChanged(object _, FileSystemEventArgs e)
 		{
-			if (dnType == null || systemType.IsGenericTypeDefinition)
-				return;
 
-			systemType.GetMethods(AccessTools.all)
-				.Concat(systemType.GetConstructors(AccessTools.all)
-				.Cast<MethodBase>())
-				.Do(method =>
-				{
-					if (method.GetMethodBody() == null || method.IsGenericMethodDefinition)
-						return;
-
-					var code = method.GetMethodBody().GetILAsByteArray();
-					var dnMethod = dnType.Methods.FirstOrDefault(m => Translator.MethodSigMatch(method, m));
-					if (dnMethod == null)
-						return;
-
-					var methodBody = dnMethod.Body;
-					var newCode = MethodSerializer.SerializeInstructions(methodBody);
-					if (code.SequenceEqual(newCode))
-						return;
-
-					try
-					{
-						var patch = createDynamicMethod(method, $"_Reloaded{count++}", false);
-						var ilGenerator = patch.GetILGenerator();
-
-						MethodTranslator.TranslateLocals(methodBody, ilGenerator);
-						MethodTranslator.TranslateRefs(methodBody, newCode, patch);
-
-						var trv = Traverse.Create(ilGenerator);
-						trv.Field("code").SetValue(newCode);
-						trv.Field("code_len").SetValue(newCode.Length);
-						trv.Field("max_stack").SetValue(methodBody.MaxStack);
-
-						MethodTranslator.TranslateExceptions(methodBody, ilGenerator);
-
-						var replacement = createReplacement(patch, out _);
-						detourMethod(method, replacement);
-					}
-					catch (Exception e)
-					{
-						Log.Error($"Patching {method.FullDescription()} failed with {e}");
-					}
-				});
-		}
-
-		static bool IsCompilerGenerated(Type type)
-		{
-			while (type != null)
-			{
-				if (type.HasAttribute<CompilerGeneratedAttribute>())
-					return true;
-				type = type.DeclaringType;
-			}
-
-			return false;
 		}
 
 		internal void DeleteAllFiles()
@@ -159,30 +105,53 @@ namespace Doorstop
 				finally { }
 		}
 
-		internal static Assembly LoadFile(string path)
+		internal static Assembly LoadOriginalAssembly(string path)
 		{
-			var copyDll = DupFiles(path);
-			return Assembly.LoadFile(copyDll);
+			var originalAssembly = ReloadAssembly(path, false);
+			originalAssembly.GetTypes().SelectMany(type => Tools.AllReloadableMembers(type, reflectionOnly: false))
+				.Do(member =>
+				{
+					$"registered {member.FullDescription()} for reloading [{member.Id()}]".LogMessage();
+					reloadableMembers[member.Id()] = member;
+				});
+			return originalAssembly;
 		}
 
-		static string DupFiles(string path)
+		static int n = 0;
+		static Assembly ReloadAssembly(string path, bool reflectionOnly)
 		{
 			var assembliesDir = Path.GetDirectoryName(path);
 			var baseName = Path.GetFileNameWithoutExtension(path);
 			var filenamePrefix = $"{doorstopPrefix}{DateTime.Now:yyyyMMddHHmmss}_";
 
 			var originalDll = Path.Combine(assembliesDir, $"{baseName}.dll");
-			var copyDll = Path.Combine(assembliesDir, $"{filenamePrefix}{baseName}.dll");
-			File.Copy(originalDll, copyDll, true);
+			var copyDllPath = Path.Combine(assembliesDir, $"{filenamePrefix}{baseName}.dll");
+			Tools.Copy(originalDll, copyDllPath, ++n);
+
+			var dllBytes = File.ReadAllBytes(copyDllPath);
+			if (reflectionOnly)
+				return Assembly.ReflectionOnlyLoad(dllBytes);
 
 			var originalPdb = Path.Combine(assembliesDir, $"{baseName}.pdb");
 			if (File.Exists(originalPdb))
 			{
-				var copyPdb = Path.Combine(assembliesDir, $"{filenamePrefix}{baseName}.pdb");
-				File.Copy(originalPdb, copyPdb, true);
+				var copyPdbPath = Path.Combine(assembliesDir, $"{filenamePrefix}{baseName}.pdb");
+				File.Copy(originalPdb, copyPdbPath, true);
+
+				var pdbBytes = File.ReadAllBytes(copyPdbPath);
+				return AppDomain.CurrentDomain.Load(dllBytes, pdbBytes);
 			}
 
-			return copyDll;
+			return AppDomain.CurrentDomain.Load(dllBytes);
+		}
+
+		static void UpdateAssembly(Assembly assembly)
+		{
+			assembly.ReflectAllTypes().SelectMany(type => Tools.AllReloadableMembers(type, reflectionOnly: true)).Do(member =>
+			{
+				if (reloadableMembers.TryGetValue(member.Id(), out var originalMethod))
+					Tools.DetourMethod(originalMethod, member);
+			});
 		}
 	}
 }

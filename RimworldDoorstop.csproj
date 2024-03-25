@@ -2,11 +2,8 @@
 
 	<PropertyGroup>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<AppDesignerFolder>Properties</AppDesignerFolder>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<AssemblyName>Doorstop</AssemblyName>
-		<AssemblyName>Doorstop</AssemblyName>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<Authors>Andreas Pardeike</Authors>
 		<Company>Brrainz</Company>
 		<Configurations>Release</Configurations>
@@ -15,42 +12,55 @@
 		<Deterministic>true</Deterministic>
 		<ErrorReport>prompt</ErrorReport>
 		<FileAlignment>512</FileAlignment>
-		<FileVersion>1.0.0.0</FileVersion>
-		<InformationalVersion>1.0.0.0</InformationalVersion>
-		<LangVersion>latest</LangVersion>
+		<LangVersion>preview</LangVersion>
 		<Optimize>true</Optimize>
 		<OutputPath>bin</OutputPath>
 		<OutputType>Library</OutputType>
-		<PackageVersion>1.0.0.0</PackageVersion>
 		<PlatformTarget>x64</PlatformTarget>
 		<Product>Doorstop</Product>
 		<ProjectGuid>{8FB2807E-756F-480E-A66E-EEDF72FEF006}</ProjectGuid>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<CheckEolTargetFramework>false</CheckEolTargetFramework>
 		<RootNamespace>Doorstop</RootNamespace>
 		<SignAssembly>False</SignAssembly>
 		<TargetFramework>net472</TargetFramework>
-		<TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<Version>1.0.0.0</Version>
-		<WarningLevel>4</WarningLevel>
+		<Version>1.5.0.0</Version>
+		<AssemblyVersion>$(Version)</AssemblyVersion>
+		<PackageVersion>$(Version)</PackageVersion>
+		<FileVersion>$(Version)</FileVersion>
+		<InformationalVersion>$(Version)</InformationalVersion>
+		<ClearOutputDirectory>True</ClearOutputDirectory>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="dnlib" Version="4.4.0" />
 		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.5.4042-beta" />
-		<PackageReference Include="MonoMod.Utils" Version="25.0.4" />
+		<PackageReference Include="Lib.Harmony" Version="2.3.1.1" />
+		<PackageReference Include="Mono.Cecil" Version="0.11.5" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Reference Include="0Harmony">
-			<HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\HarmonyMod\Current\Assemblies\0Harmony.dll</HintPath>
-		</Reference>
+		<Publicize Include="mscorlib;Assembly-CSharp" />
 	</ItemGroup>
+
+	<Target Name="EmbedReferencedAssemblies" AfterTargets="ResolveAssemblyReferences">
+		<ItemGroup>
+			<FilesToEmbed Include="@(ReferenceCopyLocalPaths)" Condition="('%(ReferenceCopyLocalPaths.Extension)' == '.dll' Or '%(ReferenceCopyLocalPaths.Extension)' == '.pdb')" />
+			<FilesToExclude Include="@(ReferenceCopyLocalPaths)" Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.xml'" />
+			<EmbeddedResource Include="@(FilesToEmbed)">
+				<LogicalName>%(FilesToEmbed.DestinationSubDirectory)%(FilesToEmbed.Filename)%(FilesToEmbed.Extension)</LogicalName>
+			</EmbeddedResource>
+			<ReferenceCopyLocalPaths Remove="@(FilesToEmbed)" />
+			<ReferenceCopyLocalPaths Remove="@(FilesToExclude)" />
+		</ItemGroup>
+		<Message Importance="high" Text="Embedding: @(FilesToEmbed->'%(Filename)%(Extension)', ', ')" />
+	</Target>
 
 	<Target Name="PostBuildAction" AfterTargets="Build">
 		<ItemGroup>
-			<CopyResult Include="bin\**" />
+			<CopyDoorstop Include="$(OutputPath)\Doorstop.dll" />
 		</ItemGroup>
-		<Copy SourceFiles="@(CopyResult)" DestinationFolder="$(RIMWORLD_MOD_DIR)\..\" />
+		<Copy SourceFiles="@(CopyDoorstop)" DestinationFolder="$(RIMWORLD_MOD_DIR)\.." />
 	</Target>
 
 </Project>

@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "Used to keep a reference around", Scope = "member", Target = "~F:Doorstop.Entrypoint.reloader")]
+[assembly: SuppressMessage("CodeQuality", "IDE0052:Remove unread private members", Justification = "Used to keep a reference around", Scope = "member", Target = "~F:Doorstop.Reloader.instance")]
