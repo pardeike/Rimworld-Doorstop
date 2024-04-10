@@ -2,6 +2,8 @@
 
 Companion implementation to [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop).
 
+<img src="https://github.com/pardeike/Rimworld-Doorstop/assets/853584/8fb30d47-63ad-42b6-94ae-93377ad7948e" width="320" />
+
 # Why use it
 
 RimWorld uses Unity and the debugger server in Unity isn't available by default. Unity Doorstop fixes this and needs at least some default implementation to run. This project gives you a Doorstop.dll that you can use and has the added benefit of hot-reloading methods that are annotated with the attribute `[Reloadable]`. You can create this attribute in your own code base like this:
