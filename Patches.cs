@@ -31,7 +31,7 @@ namespace Doorstop
 		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return instructions.MethodReplacer(
-				SymbolExtensions.GetMethodInfo(() => Assembly.LoadFile("")),
+				SymbolExtensions.GetMethodInfo(() => Assembly.LoadFrom("")),
 				SymbolExtensions.GetMethodInfo(() => Reloader.LoadOriginalAssembly(""))
 			);
 		}
