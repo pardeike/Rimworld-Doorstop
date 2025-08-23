@@ -1,32 +1,31 @@
 ﻿using System;
 using System.Reflection;
 
-namespace Doorstop
+namespace RimWorldDoorstop;
+
+public class Entrypoint
 {
-	public class Entrypoint
+	static readonly string[] assemblies =
+	[
+		"0Harmony.dll",
+		"Mono.Cecil.dll",
+		"Mono.Cecil.Mdb.dll",
+		"Mono.Cecil.Pdb.dll",
+		"Mono.Cecil.Rocks.dll"
+	];
+
+	public static void Start()
 	{
-		static readonly string[] assemblies =
-		[
-			"0Harmony.dll",
-			"Mono.Cecil.dll",
-			"Mono.Cecil.Mdb.dll",
-			"Mono.Cecil.Pdb.dll",
-			"Mono.Cecil.Rocks.dll"
-		];
+		foreach (var assemblyName in assemblies)
+			Assembly.Load(LoadResourceBytes(assemblyName));
+		Type.GetType("RimWorldDoorstop.Reloader").GetMethod("Start").Invoke(null, null);
+	}
 
-		public static void Start()
-		{
-			foreach (var assemblyName in assemblies)
-				Assembly.Load(LoadResourceBytes(assemblyName));
-			Type.GetType("Doorstop.Reloader").GetMethod("Start").Invoke(null, null);
-		}
-
-		static byte[] LoadResourceBytes(string resourceName)
-		{
-			using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
-			var data = new byte[stream.Length];
-			stream.Read(data, 0, data.Length);
-			return data;
-		}
+	static byte[] LoadResourceBytes(string resourceName)
+	{
+		using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+		var data = new byte[stream.Length];
+		stream.Read(data, 0, data.Length);
+		return data;
 	}
 }

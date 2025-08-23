@@ -21,7 +21,7 @@
 		<ProjectGuid>{8FB2807E-756F-480E-A66E-EEDF72FEF006}</ProjectGuid>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<CheckEolTargetFramework>false</CheckEolTargetFramework>
-		<RootNamespace>Doorstop</RootNamespace>
+		<RootNamespace>RimWorldDoorstop</RootNamespace>
 		<SignAssembly>False</SignAssembly>
 		<TargetFramework>net472</TargetFramework>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -34,8 +34,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4523" />
-		<PackageReference Include="Lib.Harmony" Version="2.3.6" />
+		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4543" />
+		<PackageReference Include="Lib.Harmony" Version="2.4.1" />
 		<PackageReference Include="Mono.Cecil" Version="0.11.6" />
 	</ItemGroup>
 
