@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using static HarmonyLib.AccessTools;
 
-namespace RimWorldDoorstop;
+namespace Doorstop;
 
 [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method)]
 public class ReloadableAttribute : Attribute

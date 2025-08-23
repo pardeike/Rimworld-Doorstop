@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using Verse;
 
-namespace RimWorldDoorstop;
+namespace Doorstop;
 
 internal class Reloader
 {

@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 
-namespace RimWorldDoorstop;
+namespace Doorstop;
 
 internal class Debouncer
 {

@@ -4,7 +4,7 @@ using HarmonyLib;
 using UnityEngine;
 using Verse;
 
-namespace RimWorldDoorstop;
+namespace Doorstop;
 
 public class ShutdownHandler : MonoBehaviour
 {

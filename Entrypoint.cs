@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace RimWorldDoorstop;
+namespace Doorstop;
 
 public class Entrypoint
 {
@@ -18,7 +18,7 @@ public class Entrypoint
 	{
 		foreach (var assemblyName in assemblies)
 			Assembly.Load(LoadResourceBytes(assemblyName));
-		Type.GetType("RimWorldDoorstop.Reloader").GetMethod("Start").Invoke(null, null);
+		Type.GetType("Doorstop.Reloader").GetMethod("Start").Invoke(null, null);
 	}
 
 	static byte[] LoadResourceBytes(string resourceName)

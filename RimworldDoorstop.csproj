@@ -21,7 +21,7 @@
 		<ProjectGuid>{8FB2807E-756F-480E-A66E-EEDF72FEF006}</ProjectGuid>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 		<CheckEolTargetFramework>false</CheckEolTargetFramework>
-		<RootNamespace>RimWorldDoorstop</RootNamespace>
+		<RootNamespace>Doorstop</RootNamespace>
 		<SignAssembly>False</SignAssembly>
 		<TargetFramework>net472</TargetFramework>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
