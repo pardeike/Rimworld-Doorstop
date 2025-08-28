@@ -34,8 +34,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="ILReloaderLib" Version="1.0.3" />
 		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4543" />
-		<PackageReference Include="Lib.Harmony" Version="2.4.1" />
+		<PackageReference Include="Lib.Harmony.Ref" Version="2.4.1" />
 		<PackageReference Include="Mono.Cecil" Version="0.11.6" />
 	</ItemGroup>
 
