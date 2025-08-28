@@ -3,7 +3,7 @@
 Companion implementation to [Unity Doorstop](https://github.com/NeighTools/UnityDoorstop). This provides a `Doorstop.dll` that Doorstop loads first, enables the Unity/Mono debug server, and adds a small hot‑reload mechanism for methods/ctors marked `[Reloadable]` in your mod assemblies.
 
 > **Tested with Unity Doorstop v4.4.0** (Windows, Linux, macOS). See the latest release notes: https://github.com/NeighTools/UnityDoorstop/releases
-
+> **Uses ILReloaderLib v1.0.3** (Windows, Linux, macOS). See the latest release notes: https://github.com/pardeike/ILReloader/releases
 ---
 
 ## Why use it
@@ -25,7 +25,7 @@ public class ReloadableAttribute : Attribute { }
 
 - **Unity Doorstop v4.4.0** (multi‑platform; includes Linux + macOS builds)  
   ↳ https://github.com/NeighTools/UnityDoorstop/releases  
-- **Harmony 2.4+** (optional but common; arm64‑ready for Apple Silicon)  
+- **Harmony 2.4.1** (optional but common; arm64‑ready for Apple Silicon)  
   ↳ https://github.com/pardeike/Harmony/releases  
 - **Debugger** (pick one):  
   - **dnSpyEx** (Windows): https://github.com/dnSpyEx/dnSpy  
