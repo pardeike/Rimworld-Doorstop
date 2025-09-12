@@ -30,7 +30,10 @@ public class ReloadableAttribute : Attribute { }
 - **Debugger** (pick one):  
   - **dnSpyEx** (Windows): https://github.com/dnSpyEx/dnSpy  
   - **JetBrains Rider** (Win/macOS): https://www.jetbrains.com/help/rider/Debugging_Unity_Applications.html  
-  - **Visual Studio** (Windows): https://learn.microsoft.com/visualstudio/gamedev/unity/get-started/using-visual-studio-tools-for-unity
+  - **Visual Studio** (Windows): https://learn.microsoft.com/visualstudio/gamedev/unity/get-started/using-visual-studio-tools-for-unity  
+
+### Important
+Rimworld-Doorstop does no longer include Harmony and instead uses the version that Rimworld loads. You need to point to Harmony in the ini file, see below!  
 
 ---
 
@@ -51,6 +54,11 @@ public class ReloadableAttribute : Attribute { }
    enabled=true
    target_assembly=Doorstop.dll
    redirect_output_log=false
+
+   # point to the Harmony library for active reloading, first existing location is loaded
+   [Harmony]
+   harmony_library=Mods\HarmonyMod\Current\Assemblies\0Harmony.dll
+   harmony_library=..\..\workshop\content\294100\2009463077\Current\Assemblies\0Harmony.dll
 
    [UnityMono]
    # If you need to override Mono's search path, set this (see Doorstop v4.2+ notes)
