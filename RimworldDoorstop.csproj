@@ -34,10 +34,17 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="ILReloaderLib" Version="1.0.4" />
+		<Compile Remove="ILReloaderLib\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4566" />
 		<PackageReference Include="Lib.Harmony.Ref" Version="2.4.1" />
 		<PackageReference Include="Mono.Cecil" Version="0.11.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="ILReloaderLib\ILReloaderLib.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
