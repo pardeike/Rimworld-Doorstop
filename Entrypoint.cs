@@ -50,9 +50,10 @@ public class Entrypoint
 
 	static Assembly Load(string assemblyName)
 	{
-		using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(assemblyName);
+		using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(assemblyName)
+			?? throw new FileNotFoundException($"Embedded resource '{assemblyName}' not found");
 		var data = new byte[stream.Length];
-		stream.Read(data, 0, data.Length);
+		_ = stream.Read(data, 0, data.Length);
 		return Assembly.Load(data);
 	}
 }
