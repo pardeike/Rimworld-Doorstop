@@ -57,7 +57,7 @@
 		<Message Importance="high" Text="Embedding: @(FilesToEmbed->'%(Filename)%(Extension)', ', ')" />
 	</Target>
 
-	<Target Name="PostBuildAction" AfterTargets="Build">
+	<Target Name="PostBuildAction" AfterTargets="Build" Condition="'$(RIMWORLD_MOD_DIR)' != ''">
 		<ItemGroup>
 			<CopyDoorstop Include="$(OutputPath)\Doorstop.dll" />
 		</ItemGroup>
