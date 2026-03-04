@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_notes:
-        description: 'Release notes (optional)'
+        description: 'Release notes (optional, prepended to auto-generated changelog)'
         required: false
         default: ''
 
@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -29,6 +31,42 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Generate release notes
+        id: notes
+        env:
+          USER_NOTES: ${{ github.event.inputs.release_notes }}
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            CHANGELOG=$(git log "${LATEST_TAG}..HEAD" --pretty=format:"- %s")
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s")
+          fi
+
+          BODY=""
+          if [ -n "$USER_NOTES" ]; then
+            BODY="${USER_NOTES}"
+            if [ -n "$CHANGELOG" ]; then
+              BODY="${BODY}
+
+          ## Changes
+
+          ${CHANGELOG}"
+            fi
+          else
+            if [ -n "$CHANGELOG" ]; then
+              BODY="## Changes
+
+          ${CHANGELOG}"
+            fi
+          fi
+
+          {
+            echo "body<<RELEASE_NOTES_EOF"
+            echo "$BODY"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build
         run: dotnet build -c Release
 
@@ -37,5 +75,5 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: RimWorld Doorstop
-          body: ${{ github.event.inputs.release_notes }}
+          body: ${{ steps.notes.outputs.body }}
           files: bin/Doorstop.dll
